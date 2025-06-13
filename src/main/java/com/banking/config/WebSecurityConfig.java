@@ -64,19 +64,27 @@ public class WebSecurityConfig {
             .csrf(csrf -> csrf.disable())
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth ->
-                auth.requestMatchers("/auth/**").permitAll()
-                    .requestMatchers("/api/health").permitAll()
-                    .requestMatchers("/api/").permitAll()
-                    .requestMatchers("/api/actuator/health").permitAll()
-                    .requestMatchers("/actuator/health").permitAll()
-                    .requestMatchers("/admin/**").hasRole("ADMIN")
-                    .anyRequest().authenticated()
-            );
-        
+            .authorizeHttpRequests(auth -> {
+                // Public health endpoints - must be first and most specific
+                auth.requestMatchers("/health").permitAll();
+                auth.requestMatchers("/").permitAll();
+                auth.requestMatchers("/api/health").permitAll();
+                auth.requestMatchers("/api/").permitAll();
+                auth.requestMatchers("/actuator/health").permitAll();
+                auth.requestMatchers("/api/actuator/health").permitAll();
+                // Auth endpoints
+                auth.requestMatchers("/auth/**").permitAll();
+                auth.requestMatchers("/api/auth/**").permitAll();
+                // Admin endpoints
+                auth.requestMatchers("/admin/**").hasRole("ADMIN");
+                auth.requestMatchers("/api/admin/**").hasRole("ADMIN");
+                // All other requests require authentication
+                auth.anyRequest().authenticated();
+            });
+
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
-        
+
         return http.build();
     }
     
