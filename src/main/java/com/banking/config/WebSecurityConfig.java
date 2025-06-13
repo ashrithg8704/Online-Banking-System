@@ -64,23 +64,20 @@ public class WebSecurityConfig {
             .csrf(csrf -> csrf.disable())
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> {
-                // Public health endpoints - must be first and most specific
-                auth.requestMatchers("/health").permitAll();
-                auth.requestMatchers("/").permitAll();
-                auth.requestMatchers("/api/health").permitAll();
-                auth.requestMatchers("/api/").permitAll();
-                auth.requestMatchers("/actuator/health").permitAll();
-                auth.requestMatchers("/api/actuator/health").permitAll();
-                // Auth endpoints
-                auth.requestMatchers("/auth/**").permitAll();
-                auth.requestMatchers("/api/auth/**").permitAll();
-                // Admin endpoints
-                auth.requestMatchers("/admin/**").hasRole("ADMIN");
-                auth.requestMatchers("/api/admin/**").hasRole("ADMIN");
-                // All other requests require authentication
-                auth.anyRequest().authenticated();
-            });
+            .authorizeHttpRequests(auth ->
+                auth.requestMatchers(
+                        "/health",
+                        "/api/health",
+                        "/actuator/**",
+                        "/api/actuator/**",
+                        "/",
+                        "/api/",
+                        "/auth/**",
+                        "/api/auth/**"
+                    ).permitAll()
+                    .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
+                    .anyRequest().authenticated()
+            );
 
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
