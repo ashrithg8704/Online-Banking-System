@@ -3,6 +3,6 @@ builder = "NIXPACKS"
 
 [deploy]
 startCommand = "java -Dserver.port=$PORT -Dspring.profiles.active=railway -jar target/online-banking-system-0.0.1-SNAPSHOT.jar"
-healthcheckPath = "/api/actuator/health"
-healthcheckTimeout = 300
+healthcheckPath = "/api/health"
+healthcheckTimeout = 600
 restartPolicyType = "ON_FAILURE"

@@ -64,8 +64,12 @@ public class WebSecurityConfig {
             .csrf(csrf -> csrf.disable())
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> 
+            .authorizeHttpRequests(auth ->
                 auth.requestMatchers("/auth/**").permitAll()
+                    .requestMatchers("/api/health").permitAll()
+                    .requestMatchers("/api/").permitAll()
+                    .requestMatchers("/api/actuator/health").permitAll()
+                    .requestMatchers("/actuator/health").permitAll()
                     .requestMatchers("/admin/**").hasRole("ADMIN")
                     .anyRequest().authenticated()
             );
