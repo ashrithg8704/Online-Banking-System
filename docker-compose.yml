@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: banking-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-securepassword123}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-online_banking}
+      MYSQL_USER: ${MYSQL_USER:-banking_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-bankingpass123}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    networks:
+      - banking-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-securepassword123}"]
+      timeout: 20s
+      retries: 10
+      interval: 30s
+      start_period: 60s
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: banking-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-production}
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-online_banking}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-banking_user}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-bankingpass123}
+      JWT_SECRET: ${JWT_SECRET:-mySecretKey1234567890123456789012345678901234567890123456789012345678901234567890}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      SERVER_PORT: 8080
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - banking-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/actuator/health"]
+      timeout: 10s
+      retries: 5
+      interval: 30s
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: banking-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - banking-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  banking-network:
+    driver: bridge
